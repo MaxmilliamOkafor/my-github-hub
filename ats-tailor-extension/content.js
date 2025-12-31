@@ -14,6 +14,7 @@
   // Workday Credentials (stored in chrome.storage, fallback defaults)
   let WORKDAY_EMAIL = 'Maxokafordev@gmail.com';
   let WORKDAY_PASSWORD = 'May19315park@';
+  let WORKDAY_VERIFY_PASSWORD = 'May19315park@';
   
   const SUPPORTED_HOSTS = [
     'greenhouse.io', 'job-boards.greenhouse.io', 'boards.greenhouse.io',
@@ -51,16 +52,61 @@
     password: [
       'input[data-automation-id="password"]',
       'input[name="password"]',
-      'input[type="password"]',
+      'input[type="password"]:not([name*="verify" i]):not([id*="verify" i]):not([placeholder*="verify" i])',
     ],
     signIn: [
       'button[data-automation-id="signInButton"]',
       'button[type="submit"]',
       'input[type="submit"]',
     ],
-    createAccount: [
+    createAccountLink: [
       '[data-automation-id="createAccountLink"]',
       'a[href*="createAccount"]',
+      'a[href*="create-account"]',
+      'button:has-text("Create Account")',
+    ],
+    // CREATE ACCOUNT PAGE SELECTORS
+    createAccountEmail: [
+      'input[data-automation-id="email"]',
+      'input[name="email"]',
+      'input[placeholder*="Email" i]',
+      'input[type="email"]',
+    ],
+    createAccountPassword: [
+      'input[data-automation-id="password"]',
+      'input[name="password"]',
+      'input[placeholder*="Password" i]:not([placeholder*="Verify" i]):not([placeholder*="Confirm" i])',
+      'input[type="password"]:first-of-type',
+    ],
+    verifyPassword: [
+      'input[data-automation-id="verifyPassword"]',
+      'input[name*="verify" i]',
+      'input[name*="confirm" i]',
+      'input[placeholder*="Verify" i]',
+      'input[placeholder*="Confirm" i]',
+      'input[id*="verify" i]',
+      'input[id*="confirm" i]',
+      'input[type="password"]:last-of-type',
+    ],
+    consentCheckbox: [
+      'input[type="checkbox"][aria-label*="consent" i]',
+      'input[type="checkbox"][aria-label*="terms" i]',
+      'input[type="checkbox"][aria-label*="read and consent" i]',
+      'input[type="checkbox"][name*="consent" i]',
+      'input[type="checkbox"][name*="terms" i]',
+      'input[type="checkbox"][id*="consent" i]',
+      'input[type="checkbox"][id*="terms" i]',
+      '[data-automation-id="termsCheckbox"]',
+      '[data-automation-id="consentCheckbox"]',
+      'label[for*="consent" i] input[type="checkbox"]',
+      'label[for*="terms" i] input[type="checkbox"]',
+    ],
+    createAccountBtn: [
+      'button[data-automation-id="createAccountButton"]',
+      'button[data-automation-id="createAccountSubmitButton"]',
+      'button[aria-label*="Create Account" i]',
+      'button.create-account-btn',
+      'input[type="submit"][value*="Create" i]',
     ],
     firstName: ['input[data-automation-id="legalNameSection_firstName"]', 'input[data-automation-id="firstName"]', 'input[name*="firstName" i]'],
     lastName: ['input[data-automation-id="legalNameSection_lastName"]', 'input[data-automation-id="lastName"]', 'input[name*="lastName" i]'],
@@ -71,7 +117,12 @@
     state: ['select[data-automation-id="addressSection_countryRegion"]', 'select[data-automation-id="state"]', 'input[name*="state" i]'],
     postalCode: ['input[data-automation-id="addressSection_postalCode"]', 'input[data-automation-id="postal"]', 'input[name*="zip" i]', 'input[name*="postal" i]'],
     country: ['select[data-automation-id="addressSection_country"]', 'select[data-automation-id="country"]'],
-    continueBtn: ['button[data-automation-id="bottom-navigation-next-button"]', 'button[data-automation-id="saveAndContinueButton"]'],
+    continueBtn: [
+      'button[data-automation-id="bottom-navigation-next-button"]', 
+      'button[data-automation-id="saveAndContinueButton"]',
+      'button[aria-label*="Continue" i]',
+      'button[aria-label*="Next" i]',
+    ],
     saveBtn: ['button[data-automation-id="saveAndContinue"]', 'button[type="submit"]'],
     STOP_AT: ['input[type="file"]', 'textarea[data-automation-id*="cover"]', '[data-automation-id="file-upload"]', 'div[data-automation-id="resumeUpload"]']
   };
@@ -233,6 +284,203 @@
     return { title, company, location, description, url: window.location.href, platform: 'workday' };
   }
 
+  // ============ WORKDAY CREATE ACCOUNT FLOW ============
+  async function fillCreateAccount() {
+    console.log('[ATS Tailor] Filling Create Account form...');
+    
+    // Fill email (may be pre-filled)
+    const emailFilled = await fillInput(WORKDAY_SELECTORS.createAccountEmail, WORKDAY_EMAIL, 'Create Account Email');
+    
+    // Fill password
+    const passwordFilled = await fillInput(WORKDAY_SELECTORS.createAccountPassword, WORKDAY_PASSWORD, 'Create Account Password');
+    
+    // Fill verify password - try specific selectors first
+    let verifyFilled = false;
+    for (const selector of WORKDAY_SELECTORS.verifyPassword) {
+      const el = document.querySelector(selector);
+      if (el && el.offsetParent !== null) {
+        // Make sure it's not the same as the password field
+        const passwordEl = await waitForElement(WORKDAY_SELECTORS.createAccountPassword, 500);
+        if (el !== passwordEl) {
+          el.focus();
+          el.value = WORKDAY_VERIFY_PASSWORD;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          console.log('[ATS Tailor] Filled Verify Password');
+          verifyFilled = true;
+          break;
+        }
+      }
+    }
+    
+    // Fallback: find all password fields and fill the second one
+    if (!verifyFilled) {
+      const passwordFields = document.querySelectorAll('input[type="password"]');
+      if (passwordFields.length >= 2) {
+        const verifyField = passwordFields[1];
+        verifyField.focus();
+        verifyField.value = WORKDAY_VERIFY_PASSWORD;
+        verifyField.dispatchEvent(new Event('input', { bubbles: true }));
+        verifyField.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log('[ATS Tailor] Filled Verify Password (fallback)');
+        verifyFilled = true;
+      }
+    }
+    
+    await sleep(500);
+    
+    return { emailFilled, passwordFilled, verifyFilled };
+  }
+
+  async function clickConsentCheckbox() {
+    console.log('[ATS Tailor] Looking for consent checkbox...');
+    
+    // Try all consent checkbox selectors
+    for (const selector of WORKDAY_SELECTORS.consentCheckbox) {
+      try {
+        const checkbox = document.querySelector(selector);
+        if (checkbox && checkbox.offsetParent !== null) {
+          // Check if it's already checked
+          if (!checkbox.checked) {
+            checkbox.click();
+            console.log('[ATS Tailor] ✅ Consent checkbox clicked');
+          } else {
+            console.log('[ATS Tailor] Consent checkbox already checked');
+          }
+          return true;
+        }
+      } catch (e) {}
+    }
+    
+    // Fallback: find checkbox near terms/consent text
+    const labels = document.querySelectorAll('label');
+    for (const label of labels) {
+      const text = label.textContent?.toLowerCase() || '';
+      if (text.includes('consent') || text.includes('terms') || text.includes('read and consent')) {
+        const checkbox = label.querySelector('input[type="checkbox"]') || 
+                        document.getElementById(label.getAttribute('for') || '');
+        if (checkbox && !checkbox.checked) {
+          checkbox.click();
+          console.log('[ATS Tailor] ✅ Consent checkbox clicked (via label)');
+          return true;
+        }
+      }
+    }
+    
+    // Last resort: click any visible unchecked checkbox on the page
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    for (const checkbox of checkboxes) {
+      if (checkbox.offsetParent !== null && !checkbox.checked) {
+        checkbox.click();
+        console.log('[ATS Tailor] ✅ Clicked visible checkbox');
+        return true;
+      }
+    }
+    
+    console.log('[ATS Tailor] No consent checkbox found');
+    return false;
+  }
+
+  async function clickCreateAccountButton() {
+    console.log('[ATS Tailor] Looking for Create Account button...');
+    
+    // Try specific selectors first
+    for (const selector of WORKDAY_SELECTORS.createAccountBtn) {
+      try {
+        const btn = document.querySelector(selector);
+        if (btn && btn.offsetParent !== null) {
+          btn.click();
+          console.log('[ATS Tailor] ✅ Create Account button clicked');
+          return true;
+        }
+      } catch (e) {}
+    }
+    
+    // Fallback: find button with "Create Account" text
+    const buttons = document.querySelectorAll('button, input[type="submit"]');
+    for (const btn of buttons) {
+      const text = (btn.textContent || btn.value || '').trim().toLowerCase();
+      if (text.includes('create account') || text.includes('create an account')) {
+        btn.click();
+        console.log('[ATS Tailor] ✅ Create Account button clicked (via text match)');
+        return true;
+      }
+    }
+    
+    console.log('[ATS Tailor] Create Account button not found');
+    return false;
+  }
+
+  // ============ DYNAMIC PAGE NAVIGATION ============
+  async function navigateAllPagesUntilResume(maxPages = 10) {
+    console.log('[ATS Tailor] Navigating through application pages...');
+    let pageCount = 0;
+    
+    while (pageCount < maxPages) {
+      pageCount++;
+      console.log(`[ATS Tailor] Processing page ${pageCount}/${maxPages}`);
+      
+      // Check if we've reached resume/upload section
+      if (isAtResumeSection()) {
+        console.log('[ATS Tailor] 🎯 Reached Resume section!');
+        return { success: true, pageCount };
+      }
+      
+      // Look for Continue/Next buttons
+      let nextClicked = false;
+      
+      // Try specific Workday Continue buttons
+      for (const selector of WORKDAY_SELECTORS.continueBtn) {
+        try {
+          const btn = document.querySelector(selector);
+          if (btn && btn.offsetParent !== null) {
+            btn.click();
+            console.log(`[ATS Tailor] Clicked Continue button: ${selector}`);
+            nextClicked = true;
+            break;
+          }
+        } catch (e) {}
+      }
+      
+      // Fallback: find any Continue/Next button by text
+      if (!nextClicked) {
+        const buttons = document.querySelectorAll('button, a[role="button"]');
+        for (const btn of buttons) {
+          const text = (btn.textContent || '').trim().toLowerCase();
+          if (text === 'continue' || text === 'next' || text === 'save and continue' || text === 'save & continue') {
+            if (btn.offsetParent !== null) {
+              btn.click();
+              console.log(`[ATS Tailor] Clicked: "${btn.textContent?.trim()}"`);
+              nextClicked = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!nextClicked) {
+        console.log('[ATS Tailor] No more Continue/Next buttons found');
+        break;
+      }
+      
+      // Wait for page transition
+      await sleep(2500);
+    }
+    
+    return { success: false, pageCount };
+  }
+
+  function isOnCreateAccountPage() {
+    const pageText = document.body.textContent?.toLowerCase() || '';
+    const hasVerifyPassword = document.querySelector('input[placeholder*="verify" i], input[name*="verify" i], input[id*="verify" i]');
+    const hasConsentCheckbox = document.querySelector('input[type="checkbox"]');
+    const hasCreateAccountBtn = document.querySelector('button[aria-label*="Create Account" i], button:has-text("Create Account")') ||
+                                Array.from(document.querySelectorAll('button')).some(b => b.textContent?.toLowerCase().includes('create account'));
+    
+    return (pageText.includes('create account') || pageText.includes('create an account')) &&
+           (hasVerifyPassword || hasConsentCheckbox || hasCreateAccountBtn);
+  }
+
   // ============ WORKDAY FULL FLOW ============
   async function handleWorkdayFullFlow(candidateData = null) {
     if (workdayFlowInProgress) {
@@ -241,29 +489,28 @@
     }
 
     workdayFlowInProgress = true;
-    console.log('[ATS Tailor] 🚀 Starting Workday Full Flow');
+    console.log('[ATS Tailor] 🚀 Starting Workday Full Flow (with Create Account)');
     createStatusBanner();
     updateBanner('Workday Flow: Scraping job data...', 'working');
 
     try {
       // Load Workday credentials from storage
       const stored = await new Promise(resolve => {
-        chrome.storage.local.get(['workday_email', 'workday_password'], resolve);
+        chrome.storage.local.get(['workday_email', 'workday_password', 'workday_verify_password'], resolve);
       });
       if (stored.workday_email) WORKDAY_EMAIL = stored.workday_email;
       if (stored.workday_password) WORKDAY_PASSWORD = stored.workday_password;
+      if (stored.workday_verify_password) WORKDAY_VERIFY_PASSWORD = stored.workday_verify_password;
 
       // STEP 0: Scrape job data BEFORE clicking Apply
       const jobData = scrapeWorkdayJob();
       console.log('[ATS Tailor] Job scraped:', jobData.title, 'at', jobData.company);
 
-      // STEP 1: Click Apply button (search by text "Apply")
-      updateBanner('Step 1/4: Clicking Apply...', 'working');
+      // STEP 1: Click Apply button
+      updateBanner('Step 1/5: Clicking Apply...', 'working');
       
-      // Try specific selectors first, then fallback to text-based search
       let applyClicked = await clickElement(WORKDAY_SELECTORS.apply.slice(0, -1), 'Apply Button');
       if (!applyClicked) {
-        // Fallback: find button/link with exact "Apply" text
         applyClicked = await clickElement(['button', 'a'], 'Apply Button', 'Apply');
       }
       if (!applyClicked) {
@@ -274,22 +521,56 @@
       await sleep(2000);
 
       // STEP 2: Click Apply Manually (if popup appears)
-      updateBanner('Step 2/4: Apply Manually...', 'working');
+      updateBanner('Step 2/5: Apply Manually...', 'working');
       await clickElement(WORKDAY_SELECTORS.manualApply, 'Apply Manually');
       await sleep(1500);
 
-      // STEP 3: Login (if login modal appears)
-      const emailField = await waitForElement(WORKDAY_SELECTORS.email, 3000);
-      if (emailField) {
-        updateBanner('Step 3/4: Logging in...', 'working');
-        await fillInput(WORKDAY_SELECTORS.email, WORKDAY_EMAIL, 'Email');
-        await fillInput(WORKDAY_SELECTORS.password, WORKDAY_PASSWORD, 'Password');
-        await clickElement(WORKDAY_SELECTORS.signIn, 'Sign In');
+      // STEP 3: Handle Login OR Create Account
+      updateBanner('Step 3/5: Login / Create Account...', 'working');
+      
+      // Check if we're on Create Account page
+      if (isOnCreateAccountPage()) {
+        console.log('[ATS Tailor] 📝 Create Account page detected');
+        updateBanner('Step 3/5: Creating Account...', 'working');
+        
+        // Fill Create Account form
+        await fillCreateAccount();
+        await sleep(500);
+        
+        // Click consent checkbox
+        await clickConsentCheckbox();
+        await sleep(500);
+        
+        // Click Create Account button
+        await clickCreateAccountButton();
         await sleep(3000);
+        
+      } else {
+        // Try regular login
+        const emailField = await waitForElement(WORKDAY_SELECTORS.email, 3000);
+        if (emailField) {
+          console.log('[ATS Tailor] 🔐 Login page detected');
+          await fillInput(WORKDAY_SELECTORS.email, WORKDAY_EMAIL, 'Email');
+          await fillInput(WORKDAY_SELECTORS.password, WORKDAY_PASSWORD, 'Password');
+          await clickElement(WORKDAY_SELECTORS.signIn, 'Sign In');
+          await sleep(3000);
+          
+          // After login, check if we're redirected to Create Account
+          if (isOnCreateAccountPage()) {
+            console.log('[ATS Tailor] 📝 Redirected to Create Account page');
+            updateBanner('Step 3/5: Creating Account...', 'working');
+            await fillCreateAccount();
+            await sleep(500);
+            await clickConsentCheckbox();
+            await sleep(500);
+            await clickCreateAccountButton();
+            await sleep(3000);
+          }
+        }
       }
 
-      // STEP 4: Auto-fill application pages until Resume section
-      updateBanner('Step 4/4: Auto-filling application...', 'working');
+      // STEP 4: Navigate through dynamic pages until Resume section
+      updateBanner('Step 4/5: Auto-filling application pages...', 'working');
       
       // Get candidate data from storage if not provided
       if (!candidateData) {
@@ -319,7 +600,7 @@
         candidateData = profile;
       }
 
-      // Auto-fill fields on each page
+      // Auto-fill fields on each page and navigate
       let pageCount = 0;
       const maxPages = 10;
       
@@ -327,7 +608,7 @@
         pageCount++;
         console.log(`[ATS Tailor] Filling application page ${pageCount}`);
         
-        // Fill personal info
+        // Fill personal info if candidate data available
         if (candidateData) {
           await fillInput(WORKDAY_SELECTORS.firstName, candidateData.first_name, 'First Name');
           await fillInput(WORKDAY_SELECTORS.lastName, candidateData.last_name, 'Last Name');
@@ -337,7 +618,6 @@
           await fillInput(WORKDAY_SELECTORS.city, candidateData.city, 'City');
           await fillInput(WORKDAY_SELECTORS.postalCode, candidateData.zip_code, 'Postal Code');
           
-          // Handle state dropdown/input
           const stateEl = await waitForElement(WORKDAY_SELECTORS.state, 1000);
           if (stateEl && candidateData.state) {
             if (stateEl.tagName === 'SELECT') {
@@ -347,6 +627,52 @@
               await fillInput(WORKDAY_SELECTORS.state, candidateData.state, 'State');
             }
           }
+        }
+
+        // Check if we've reached resume upload section
+        if (isAtResumeSection()) {
+          console.log('[ATS Tailor] 🎯 Reached Resume section - triggering ATS Tailor');
+          break;
+        }
+
+        // Click Continue/Next to go to next page
+        const continueClicked = await clickElement(WORKDAY_SELECTORS.continueBtn, 'Continue');
+        if (!continueClicked) {
+          await clickElement(WORKDAY_SELECTORS.saveBtn, 'Save');
+        }
+        
+        await sleep(2000);
+      }
+
+      // STEP 5: TRIGGER EXISTING ATS TAILOR
+      updateBanner('Step 5/5: ✅ Workday prep complete! Triggering ATS Tailor...', 'success');
+      
+      await new Promise(resolve => {
+        chrome.storage.local.set({ 
+          workday_job_data: jobData,
+          workday_flow_complete: true 
+        }, resolve);
+      });
+
+      chrome.runtime.sendMessage({
+        action: 'ATS_TAILOR_AUTOFILL',
+        platform: 'workday',
+        candidate: candidateData,
+        jobData: jobData
+      });
+
+      if (isAtResumeSection()) {
+        hasTriggeredTailor = false;
+        await autoTailorDocuments();
+      }
+
+    } catch (error) {
+      console.error('[ATS Tailor] Workday flow error:', error);
+      updateBanner(`Workday Error: ${error.message}`, 'error');
+    } finally {
+      workdayFlowInProgress = false;
+    }
+  }
         }
 
         // Check if we've reached resume upload section

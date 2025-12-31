@@ -165,22 +165,45 @@
         </div>
       </div>
 
-      <!-- Workday Full Flow Section -->
-      <div class="workday-section">
-        <h3>🚀 Workday Full Flow</h3>
-        <p class="workday-hint">Automates: Apply → Login → Fill Form → Trigger ATS Tailor</p>
+      <!-- ATS TAILOR - Workday Profile Setup Section -->
+      <div class="workday-section ats-tailor-section">
+        <div class="section-header-badge">ATS TAILOR</div>
+        <h3>🚀 Workday Profile Setup</h3>
+        <p class="workday-hint">Automates: Apply → Create Account → Fill Form → Trigger ATS Tailor</p>
+        
+        <!-- Profile Status Display -->
+        <div class="workday-profile-status">
+          <div class="profile-row">
+            <span class="profile-label">Email:</span>
+            <span class="profile-value" id="workdayEmailDisplay">Maxokafordev@gmail.com</span>
+            <span class="status-check">✓</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-label">Password:</span>
+            <span class="profile-value">••••••••••</span>
+            <span class="status-check">✓</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-label">Verify Password:</span>
+            <span class="profile-value">••••••••••</span>
+            <span class="status-check">✓</span>
+          </div>
+        </div>
+        
         <div class="workday-settings">
           <label class="toggle-row" for="workdayAutoToggle">
             <span class="toggle-label">Enable Workday Automation</span>
             <input type="checkbox" id="workdayAutoToggle" checked />
           </label>
         </div>
-        <button id="runWorkdayFlow" class="btn btn-accent btn-large btn-full">
-          <span class="btn-icon-left">⚡</span>
-          <span class="btn-text">Run Workday Flow</span>
+        
+        <button id="runWorkdayFlow" class="btn btn-accent btn-large btn-full btn-workday">
+          <span class="btn-icon-left">🚀</span>
+          <span class="btn-text">Start Workday Full Flow</span>
         </button>
+        
         <details class="workday-credentials">
-          <summary>Workday Login Settings</summary>
+          <summary>Workday Account Settings</summary>
           <div class="input-group">
             <label for="workdayEmail">Email</label>
             <input type="email" id="workdayEmail" value="Maxokafordev@gmail.com">
@@ -188,6 +211,10 @@
           <div class="input-group">
             <label for="workdayPassword">Password</label>
             <input type="password" id="workdayPassword" value="May19315park@">
+          </div>
+          <div class="input-group">
+            <label for="workdayVerifyPassword">Verify Password</label>
+            <input type="password" id="workdayVerifyPassword" value="May19315park@">
           </div>
           <button id="saveWorkdayCreds" class="btn btn-secondary btn-sm">Save Credentials</button>
         </details>

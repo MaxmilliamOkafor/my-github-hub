@@ -11,6 +11,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       workday_email: 'Maxokafordev@gmail.com',
       workday_password: 'May19315park@',
+      workday_verify_password: 'May19315park@',
       workday_auto_enabled: true
     });
   } else if (details.reason === 'update') {
@@ -80,7 +81,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'UPDATE_WORKDAY_CREDENTIALS') {
     chrome.storage.local.set({
       workday_email: message.email,
-      workday_password: message.password
+      workday_password: message.password,
+      workday_verify_password: message.verifyPassword || message.password
     });
     sendResponse({ status: 'updated' });
     return true;
