@@ -190,31 +190,47 @@ class ATSTailor {
 
   async loadWorkdaySettings() {
     const result = await new Promise(resolve => {
-      chrome.storage.local.get(['workday_email', 'workday_password', 'workday_auto_enabled'], resolve);
+      chrome.storage.local.get(['workday_email', 'workday_password', 'workday_verify_password', 'workday_auto_enabled'], resolve);
     });
     
     const emailInput = document.getElementById('workdayEmail');
     const passwordInput = document.getElementById('workdayPassword');
+    const verifyPasswordInput = document.getElementById('workdayVerifyPassword');
     const autoToggle = document.getElementById('workdayAutoToggle');
+    const emailDisplay = document.getElementById('workdayEmailDisplay');
     
     if (emailInput && result.workday_email) emailInput.value = result.workday_email;
     if (passwordInput && result.workday_password) passwordInput.value = result.workday_password;
+    if (verifyPasswordInput && result.workday_verify_password) verifyPasswordInput.value = result.workday_verify_password;
     if (autoToggle) autoToggle.checked = result.workday_auto_enabled !== false;
+    if (emailDisplay && result.workday_email) emailDisplay.textContent = result.workday_email;
   }
 
   saveWorkdayCredentials() {
     const email = document.getElementById('workdayEmail')?.value;
     const password = document.getElementById('workdayPassword')?.value;
+    const verifyPassword = document.getElementById('workdayVerifyPassword')?.value;
     
     if (!email || !password) {
-      this.showToast('Please enter both email and password', 'error');
+      this.showToast('Please enter email and password', 'error');
       return;
     }
+    
+    // Update the display
+    const emailDisplay = document.getElementById('workdayEmailDisplay');
+    if (emailDisplay) emailDisplay.textContent = email;
     
     chrome.runtime.sendMessage({
       action: 'UPDATE_WORKDAY_CREDENTIALS',
       email: email,
-      password: password
+      password: password,
+      verifyPassword: verifyPassword || password
+    });
+    
+    chrome.storage.local.set({
+      workday_email: email,
+      workday_password: password,
+      workday_verify_password: verifyPassword || password
     });
     
     this.showToast('Workday credentials saved!', 'success');

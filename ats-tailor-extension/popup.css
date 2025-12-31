@@ -629,7 +629,7 @@ body {
 .missing-fixes ul { list-style: none; font-size: 9px; }
 .missing-fixes li { padding: 4px 6px; background: rgba(255,165,2,0.1); border-radius: 4px; margin-bottom: 4px; }
 
-/* Workday Section */
+/* Workday Section - ATS TAILOR */
 .workday-section {
   background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,140,66,0.05));
   border: 1px solid rgba(255,107,53,0.3);
@@ -638,9 +638,28 @@ body {
   margin-bottom: 12px;
 }
 
+.workday-section.ats-tailor-section {
+  position: relative;
+}
+
+.section-header-badge {
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .workday-section h3 {
   font-size: 13px;
   margin-bottom: 6px;
+  margin-top: 4px;
   color: #ff8c42;
 }
 
@@ -648,6 +667,49 @@ body {
   font-size: 10px;
   color: rgba(255,255,255,0.6);
   margin-bottom: 10px;
+}
+
+/* Workday Profile Status Display */
+.workday-profile-status {
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 11px;
+}
+
+.profile-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.profile-label {
+  color: rgba(255,255,255,0.6);
+  min-width: 100px;
+}
+
+.profile-value {
+  color: rgba(255,255,255,0.9);
+  flex: 1;
+  text-align: right;
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.status-check {
+  color: #2ed573;
+  font-size: 12px;
 }
 
 .workday-settings {
@@ -686,4 +748,13 @@ body {
 .btn-accent:hover {
   background: linear-gradient(135deg, #ff8c42 0%, #ffa552 100%);
   box-shadow: 0 4px 12px rgba(255,107,53,0.4);
+}
+
+.btn-workday {
+  margin-top: 4px;
+  text-transform: none;
+}
+
+.btn-workday .btn-icon-left {
+  font-size: 14px;
 }
