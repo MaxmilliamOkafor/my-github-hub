@@ -673,56 +673,6 @@
       workdayFlowInProgress = false;
     }
   }
-        }
-
-        // Check if we've reached resume upload section
-        if (isAtResumeSection()) {
-          console.log('[ATS Tailor] 🎯 Reached Resume section - triggering ATS Tailor');
-          break;
-        }
-
-        // Click Continue/Next to go to next page
-        const continueClicked = await clickElement(WORKDAY_SELECTORS.continueBtn, 'Continue');
-        if (!continueClicked) {
-          // Try Save button as fallback
-          await clickElement(WORKDAY_SELECTORS.saveBtn, 'Save');
-        }
-        
-        await sleep(2000);
-      }
-
-      // TRIGGER EXISTING ATS TAILOR for resume/cover letter
-      updateBanner('✅ Workday prep complete! Triggering ATS Tailor...', 'success');
-      
-      // Store job data for the tailor
-      await new Promise(resolve => {
-        chrome.storage.local.set({ 
-          workday_job_data: jobData,
-          workday_flow_complete: true 
-        }, resolve);
-      });
-
-      // Send message to trigger main ATS tailor functionality
-      chrome.runtime.sendMessage({
-        action: 'ATS_TAILOR_AUTOFILL',
-        platform: 'workday',
-        candidate: candidateData,
-        jobData: jobData
-      });
-
-      // Trigger the auto-tailor if on resume page
-      if (isAtResumeSection()) {
-        hasTriggeredTailor = false; // Reset to allow tailoring
-        await autoTailorDocuments();
-      }
-
-    } catch (error) {
-      console.error('[ATS Tailor] Workday flow error:', error);
-      updateBanner(`Workday Error: ${error.message}`, 'error');
-    } finally {
-      workdayFlowInProgress = false;
-    }
-  }
 
   // ============ MESSAGE LISTENER FOR WORKDAY FLOW ============
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
